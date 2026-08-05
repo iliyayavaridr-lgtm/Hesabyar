@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="حساب‌یار">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>حساب‌یار ایلیا</title>
+  <style>
+    :root { --bg:#f3f4f6; --card:#fff; --text:#111827; --muted:#6b7280; --primary:#111827; --danger:#b91c1c; --border:#e5e7eb; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,sans-serif;color:var(--text)}
+    .app{max-width:760px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 14px calc(80px + env(safe-area-inset-bottom))}
+    h1{font-size:25px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 4px 18px rgba(0,0,0,.04)}
+    .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+    .seg button,.btn{border:0;border-radius:13px;padding:12px 10px;font-weight:700;font-size:14px;background:#e5e7eb;color:#111827}
+    .seg button.active,.btn.primary{background:var(--primary);color:white}
+    label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+    input,select,textarea{width:100%;border:1px solid var(--border);border-radius:12px;padding:12px;font-size:16px;background:white}
+    textarea{min-height:78px;resize:vertical}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.hidden{display:none!important}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}.btn{cursor:pointer}.btn.secondary{background:white;border:1px solid var(--border)}.btn.danger{background:#fee2e2;color:var(--danger)}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{background:#f9fafb;border-radius:14px;padding:12px;text-align:center}.metric b{display:block;font-size:18px;margin-top:4px}
+    .item{border-top:1px solid var(--border);padding:13px 0}.item:first-child{border-top:0}.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+    .type{font-weight:800}.meta{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.8}.amount{font-weight:900;white-space:nowrap}.empty{text-align:center;color:var(--muted);padding:25px}
+    .small{font-size:12px;color:var(--muted)} .footer-note{font-size:12px;line-height:1.8;color:var(--muted)}
+    @media(max-width:520px){.grid,.summary{grid-template-columns:1fr}.seg button{font-size:13px;padding:11px 5px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>حساب‌یار ایلیا</h1>
+  <div class="sub">ثبت خرید، واریز و انتقال بین حساب‌ها — واحد: تومان</div>
+
+  <section class="card">
+    <div class="seg">
+      <button data-type="خرید" class="active">خرید / برداشت</button>
+      <button data-type="واریز">واریز</button>
+      <button data-type="انتقال">انتقال</button>
+    </div>
+
+    <label>مبلغ</label>
+    <input id="amount" type="text" inputmode="numeric" placeholder="مثلاً ۲۵۰۰۰۰۰">
+
+    <div id="personWrap" class="hidden">
+      <label>چه کسی واریز کرده؟</label>
+      <input id="person" type="text" placeholder="نام شخص یا شرکت">
+    </div>
+
+    <label>بابت / توضیحات</label>
+    <textarea id="note" placeholder="مثلاً خرید لباس، بازپرداخت بدهی، انتقال نقدینگی"></textarea>
+
+    <div class="grid">
+      <div id="fromWrap">
+        <label id="fromLabel">از کدام حساب؟</label>
+        <select id="fromAccount"></select>
+      </div>
+      <div id="toWrap" class="hidden">
+        <label>به کدام حساب؟</label>
+        <select id="toAccount"></select>
+      </div>
+    </div>
+
+    <label>دسته‌بندی</label>
+    <select id="category">
+      <option>خوراک</option><option>پوشاک</option><option>حمل‌ونقل</option><option>درمان</option>
+      <option>آموزش</option><option>تفریح</option><option>قبوض</option><option>سرمایه‌گذاری</option>
+      <option>درآمد</option><option>انتقال داخلی</option><option selected>سایر</option>
+    </select>
+
+    <div class="actions" style="margin-top:16px">
+      <button class="btn primary" id="saveBtn">ثبت تراکنش</button>
+      <button class="btn secondary hidden" id="cancelEdit">لغو ویرایش</button>
+    </div>
+    <div id="msg" class="small" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card">
+    <div class="summary">
+      <div class="metric">جمع خریدها<b id="sumExpense">۰</b></div>
+      <div class="metric">جمع واریزها<b id="sumIncome">۰</b></div>
+      <div class="metric">تعداد تراکنش‌ها<b id="countTx">۰</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="font-size:18px;margin:0">تراکنش‌ها</h2>
+      <select id="filterType" style="width:auto;font-size:13px;padding:8px">
+        <option value="">همه</option><option>خرید</option><option>واریز</option><option>انتقال</option>
+      </select>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <section class="card">
+    <h2 style="font-size:18px;margin-top:0">خروجی و پشتیبان</h2>
+    <div class="actions">
+      <button class="btn primary" id="exportCsv">خروجی CSV برای Excel</button>
+      <button class="btn secondary" id="exportJson">پشتیبان JSON</button>
+      <label class="btn secondary" style="display:inline-block;margin:0">بازیابی پشتیبان
+        <input id="importJson" type="file" accept=".json" style="display:none">
+      </label>
+      <button class="btn danger" id="clearAll">حذف همه اطلاعات</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="footer-note">
+      اطلاعات فقط روی همین دستگاه ذخیره می‌شود. برای جلوگیری از حذف ناخواسته، هر چند وقت یک‌بار فایل پشتیبان JSON بگیر.
+    </div>
+  </section>
+</div>
+
+<script>
+const DEFAULT_ACCOUNTS = ["ملی 3880","ملت 4902","ملت 2966","سامان 4382","پاسارگاد 3107","بلو","نکسو 8310"];
+let txs = JSON.parse(localStorage.getItem("iliya_finance_txs") || "[]");
+let currentType = "خرید";
+let editingId = null;
+
+const $ = id => document.getElementById(id);
+const fa = n => Number(n||0).toLocaleString("fa-IR");
+const digitsToEn = s => String(s).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٬, ]/g,"");
+const esc = s => String(s??"").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+function fillAccounts(){
+  ["fromAccount","toAccount"].forEach(id=>{
+    $(id).innerHTML = DEFAULT_ACCOUNTS.map(a=>`<option>${esc(a)}</option>`).join("");
+  });
+}
+fillAccounts();
+
+document.querySelectorAll(".seg button").forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll(".seg button").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  currentType=btn.dataset.type;
+  $("personWrap").classList.toggle("hidden", currentType!=="واریز");
+  $("toWrap").classList.toggle("hidden", currentType!=="انتقال");
+  $("fromLabel").textContent = currentType==="واریز" ? "به کدام حساب؟" : "از کدام حساب؟";
+  if(currentType==="انتقال") $("category").value="انتقال داخلی";
+  if(currentType==="واریز") $("category").value="درآمد";
+});
+
+function resetForm(){
+  editingId=null; $("amount").value=""; $("person").value=""; $("note").value="";
+  $("saveBtn").textContent="ثبت تراکنش"; $("cancelEdit").classList.add("hidden"); $("msg").textContent="";
+}
+$("cancelEdit").onclick=resetForm;
+
+$("saveBtn").onclick=()=>{
+  const amount = Number(digitsToEn($("amount").value));
+  if(!Number.isFinite(amount) || amount<=0){ $("msg").textContent="مبلغ معتبر وارد کن."; return; }
+  const now = new Date();
+  const record = {
+    id: editingId || (Date.now().toString(36)+Math.random().toString(36).slice(2,7)),
+    createdAt: editingId ? txs.find(x=>x.id===editingId).createdAt : now.toISOString(),
+    type: currentType, amount,
+    fromAccount: currentType==="واریز" ? "" : $("fromAccount").value,
+    toAccount: currentType==="واریز" ? $("fromAccount").value : (currentType==="انتقال" ? $("toAccount").value : ""),
+    person: currentType==="واریز" ? $("person").value.trim() : "",
+    category: $("category").value,
+    note: $("note").value.trim()
+  };
+  if(currentType==="انتقال" && record.fromAccount===record.toAccount){ $("msg").textContent="حساب مبدأ و مقصد نمی‌توانند یکسان باشند."; return; }
+  if(editingId) txs = txs.map(x=>x.id===editingId ? record : x); else txs.unshift(record);
+  persist(); render(); resetForm(); $("msg").textContent="تراکنش ثبت شد.";
+};
+
+function persist(){ localStorage.setItem("iliya_finance_txs", JSON.stringify(txs)); }
+
+function render(){
+  const filter=$("filterType").value;
+  const rows=txs.filter(x=>!filter||x.type===filter);
+  $("list").innerHTML = rows.length ? rows.map(x=>{
+    const d=new Date(x.createdAt);
+    const route = x.type==="انتقال" ? `${esc(x.fromAccount)} ← ${esc(x.toAccount)}` :
+                  x.type==="واریز" ? `به ${esc(x.toAccount)}` : `از ${esc(x.fromAccount)}`;
+    return `<div class="item">
+      <div class="row"><div><div class="type">${esc(x.type)} · ${esc(x.category)}</div>
+      <div class="meta">${d.toLocaleDateString("fa-IR")}، ${d.toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"})}<br>${route}
+      ${x.person?`<br>شخص: ${esc(x.person)}`:""} ${x.note?`<br>${esc(x.note)}`:""}</div></div>
+      <div class="amount">${fa(x.amount)} تومان</div></div>
+      <div class="actions" style="margin-top:9px">
+        <button class="btn secondary" onclick="editTx('${x.id}')">ویرایش</button>
+        <button class="btn danger" onclick="deleteTx('${x.id}')">حذف</button>
+      </div></div>`;
+  }).join("") : `<div class="empty">هنوز تراکنشی ثبت نشده است.</div>`;
+  $("sumExpense").textContent=fa(txs.filter(x=>x.type==="خرید").reduce((a,b)=>a+b.amount,0));
+  $("sumIncome").textContent=fa(txs.filter(x=>x.type==="واریز").reduce((a,b)=>a+b.amount,0));
+  $("countTx").textContent=fa(txs.length);
+}
+$("filterType").onchange=render;
+
+window.deleteTx=id=>{ if(confirm("این تراکنش حذف شود؟")){ txs=txs.filter(x=>x.id!==id); persist(); render(); } };
+window.editTx=id=>{
+  const x=txs.find(x=>x.id===id); if(!x)return;
+  editingId=id; currentType=x.type;
+  document.querySelectorAll(".seg button").forEach(b=>b.classList.toggle("active",b.dataset.type===x.type));
+  $("personWrap").classList.toggle("hidden", x.type!=="واریز");
+  $("toWrap").classList.toggle("hidden", x.type!=="انتقال");
+  $("fromLabel").textContent = x.type==="واریز" ? "به کدام حساب؟" : "از کدام حساب؟";
+  $("amount").value=x.amount; $("note").value=x.note; $("person").value=x.person; $("category").value=x.category;
+  $("fromAccount").value = x.type==="واریز" ? x.toAccount : x.fromAccount;
+  if(x.type==="انتقال") $("toAccount").value=x.toAccount;
+  $("saveBtn").textContent="ذخیره تغییرات"; $("cancelEdit").classList.remove("hidden");
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+function download(name, content, mime){
+  const blob=new Blob([content],{type:mime}); const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=name; a.click(); URL.revokeObjectURL(url);
+}
+$("exportCsv").onclick=()=>{
+  const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const header=["شناسه","تاریخ","ساعت","نوع","مبلغ تومان","حساب مبدأ","حساب مقصد","شخص","دسته‌بندی","توضیحات"];
+  const rows=txs.map(x=>{const d=new Date(x.createdAt);return [
+    x.id,d.toLocaleDateString("fa-IR"),d.toLocaleTimeString("fa-IR",{hour:"2-digit",minute:"2-digit"}),
+    x.type,x.amount,x.fromAccount,x.toAccount,x.person,x.category,x.note].map(q).join(",")});
+  download("transactions.csv","\ufeff"+[header.map(q).join(","),...rows].join("\n"),"text/csv;charset=utf-8");
+};
+$("exportJson").onclick=()=>download("iliya-finance-backup.json",JSON.stringify(txs,null,2),"application/json");
+$("importJson").onchange=async e=>{
+  try{const data=JSON.parse(await e.target.files[0].text()); if(!Array.isArray(data))throw 0;
+    txs=data;persist();render();alert("پشتیبان بازیابی شد.");}catch{alert("فایل پشتیبان معتبر نیست.");}
+};
+$("clearAll").onclick=()=>{ if(confirm("تمام اطلاعات برای همیشه حذف شود؟")){ txs=[];persist();render(); } };
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
+render();
+</script>
+</body></html>
